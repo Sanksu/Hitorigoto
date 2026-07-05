@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ひとりごと - 登录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.lang-switch{position:fixed;top:20px;right:20px;display:flex;gap:4px}
+.lang-switch button{background:#fff;border:1px solid #ddd;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;color:#999;transition:.15s}
+.lang-switch button.active{background:#ff7d49;color:#fff;border-color:#ff7d49}
+.login-card{background:#fff;border-radius:16px;padding:40px 32px;width:90%;max-width:400px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+.login-card h1{font-size:20px;font-weight:400;color:#333;text-align:center;margin-bottom:4px;letter-spacing:2px}
+.login-card .subtitle{font-size:13px;color:#999;text-align:center;margin-bottom:28px}
+.login-card label{display:block;font-size:13px;color:#666;margin-bottom:4px;margin-top:14px}
+.login-card input{width:100%;padding:10px 14px;border:1px solid #e8e8e8;border-radius:10px;font-size:14px;outline:none;color:#555;transition:border-color .2s}
+.login-card input:focus{border-color:#ff7d49}
+.login-card button{width:100%;padding:10px;border:none;border-radius:10px;font-size:15px;cursor:pointer;transition:.15s;outline:none;background:#ff7d49;color:#fff;margin-top:24px}
+.login-card button:disabled{background:#ccc;cursor:not-allowed}
+.login-card .error-msg{color:#e74c3c;font-size:12px;text-align:center;margin-top:12px;display:none}
+.login-card .remember-row{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:#888;cursor:pointer}
+.login-card .remember-row input[type=checkbox]{width:16px;height:16px;accent-color:#ff7d49;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="lang-switch">
+  <button id="langZh" onclick="setLoginLang('zh')" class="active">中</button>
+  <button id="langEn" onclick="setLoginLang('en')">EN</button>
+</div>
+<div class="login-card">
+  <h1 id="loginTitle">后台管理</h1>
+  <p class="subtitle" id="loginSubtitle">使用管理员账号登录</p>
+  <label id="labelEmail">邮箱</label>
+  <input type="email" id="emailInput" placeholder="admin@example.com" autocomplete="email" maxlength="254">
+  <label id="labelPass">密码</label>
+  <input type="password" id="passwordInput" placeholder="输入密码" autocomplete="current-password" maxlength="128">
+  <label class="remember-row"><input type="checkbox" id="rememberCheck" checked><span id="labelRemember">下次自动登录</span></label>
+  <p class="error-msg" id="errorMsg"></p>
+  <button id="loginBtn" onclick="doLogin()">登录</button>
+  <p><a id="linkHome" href="/">返回首页</a></p>
+</div>
+<script>
+/**
+ * 登录页脚本
+ */
+
+var LOGIN_I18N = {
+  zh: { title: '后台管理', subtitle: '使用管理员账号登录', email: '邮箱', pass: '密码', emailPlaceholder: 'admin@example.com', passPlaceholder: '输入密码', remember: '下次自动登录', btn: '登录', btnBusy: '登录中...', errEmpty: '请输入邮箱和密码', errFail: '登录失败', errNet: '网络错误', home: '返回首页' },
+  en: { title: 'Admin Login', subtitle: 'Login with admin account', email: 'Email', pass: 'Password', emailPlaceholder: 'admin@example.com', passPlaceholder: 'Enter password', remember: 'Remember me', btn: 'Login', btnBusy: 'Logging in...', errEmpty: 'Please enter email and password', errFail: 'Login failed', errNet: 'Network error', home: 'Back to Home' }
+}
+
+var loginLang = localStorage.getItem('hg_admin_lang') || 'zh'
+
+function setLoginLang(lang) {
+  if (!LOGIN_I18N[lang]) return
+  loginLang = lang
+  try { localStorage.setItem('hg_admin_lang', lang) } catch (e) {}
+  document.getElementById('langZh').className = lang === 'zh' ? 'active' : ''
+  document.getElementById('langEn').className = lang === 'en' ? 'active' : ''
+  applyLoginI18n()
+}
+
+function applyLoginI18n() {
+  var t = LOGIN_I18N[loginLang]
+  document.title = 'ひとりごと - ' + t.title
+  $('loginTitle').textContent = t.title
+  $('loginSubtitle').textContent = t.subtitle
+  $('labelEmail').textContent = t.email
+  $('labelPass').textContent = t.pass
+  $('emailInput').placeholder = t.emailPlaceholder
+  $('passwordInput').placeholder = t.passPlaceholder
+  $('labelRemember').textContent = t.remember
+  $('loginBtn').textContent = t.btn
+  $('linkHome').textContent = t.home
+}
+
+var apiOrigin = location.origin
+
+// 已登录则直接跳转
+if (localStorage.getItem('hg_admin_token') || sessionStorage.getItem('hg_admin_token')) {
+  location.href = '/admin'
+}
+
+// 应用语言
+setLoginLang(loginLang)
+
+function $(id) { return document.getElementById(id) }
+
+// 回车键提交
+$('passwordInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') doLogin()
+})
+
+async function doLogin() {
+  var btn = $('loginBtn')
+  var errEl = $('errorMsg')
+  var email = $('emailInput').value.trim()
+  var password = $('passwordInput').value.trim()
+  var remember = $('rememberCheck').checked
+  var t = LOGIN_I18N[loginLang]
+  var authMode = localStorage.getItem('hg_auth_mode') || 'waline'
+
+  if (!email || !password) {
+    errEl.textContent = t.errEmpty
+    errEl.style.display = 'block'
+    return
+  }
+
+  btn.disabled = true
+  btn.textContent = t.btnBusy
+  errEl.style.display = 'none'
+
+  try {
+    var res = await fetch(apiOrigin + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password, authMode: authMode })
+    })
+    var data = await res.json()
+
+    if (!res.ok) {
+      errEl.textContent = data.error || t.errFail
+      errEl.style.display = 'block'
+      btn.disabled = false
+      btn.textContent = t.btn
+      return
+    }
+
+    if (remember) {
+      localStorage.setItem('hg_admin_token', data.token)
+    } else {
+      sessionStorage.setItem('hg_admin_token', data.token)
+    }
+    localStorage.setItem('hg_admin_name', data.display_name || '')
+    location.href = '/admin'
+  } catch (_) {
+    errEl.textContent = t.errNet
+    errEl.style.display = 'block'
+    btn.disabled = false
+    btn.textContent = t.btn
+  }
+}
+</script>
+</body>
+</html>

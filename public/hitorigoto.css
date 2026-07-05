@@ -1,0 +1,358 @@
+/* ============================================
+ * Hitorigoto 嵌入式组件样式表
+ * ============================================ */
+
+/* -------------------------------------------
+ * CSS 自定义属性（设计令牌）
+ * ------------------------------------------- */
+.hg_main {
+  --hg-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --hg-accent: #ff7d49;
+  --hg-card-bg: #fff;
+  --hg-card-radius: 16px;
+  --hg-card-padding: 20px;
+  --hg-card-gap: 20px;
+  --hg-card-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
+  --hg-text-primary: #333;
+  --hg-text-secondary: #444;
+  --hg-text-muted: #888;
+  --hg-text-light: #999;
+  --hg-text-lighter: #bbb;
+  --hg-border-color: #f0f0f0;
+  --hg-border-strong: #ddd;
+  --hg-code-bg: #f0f0f0;
+  --hg-avatar-border: #f0f0f0;
+  font-family: var(--hg-font-family);
+}
+
+/* -------------------------------------------
+ * 卡片布局
+ * ------------------------------------------- */
+.hg_main ul.hg_timeline {
+  padding: 0;
+  margin: 20px 0 0;
+  list-style: none;
+}
+
+.hg_main .hg_post {
+  margin-bottom: var(--hg-card-gap);
+}
+
+.hg_main .hg_card {
+  background: var(--hg-card-bg);
+  border-radius: var(--hg-card-radius);
+  padding: var(--hg-card-padding);
+  box-shadow: var(--hg-card-shadow);
+}
+
+.hg_main .hg_card_header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.hg_main .hg_card_avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--hg-avatar-border);
+  flex-shrink: 0;
+}
+
+.hg_main .hg_card_info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hg_main .hg_card_name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hg-text-primary);
+  line-height: 1.3;
+}
+
+.hg_main .hg_card_time {
+  font-size: 12px;
+  color: var(--hg-text-muted);
+  line-height: 1.4;
+}
+
+.hg_main .hg_card_body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--hg-text-secondary);
+}
+
+.hg_main .hg_card_footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hg-border-color);
+  font-size: 12px;
+  color: var(--hg-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* -------------------------------------------
+ * 工具栏 & 发布 & 登录
+ * ------------------------------------------- */
+.hg_main .hg_toolbar {
+  margin-bottom: 24px;
+}
+
+.hg_main .hg_login_section {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.hg_main .hg_login_form {
+  max-width: 320px;
+  margin: 12px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--hg-card-bg);
+  border-radius: var(--hg-card-radius);
+  box-shadow: var(--hg-card-shadow);
+}
+
+.hg_main .hg_login_input {
+  padding: 10px 14px;
+  border: 1px solid var(--hg-border-color);
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+  color: var(--hg-text-primary);
+  transition: border-color 0.2s;
+}
+
+.hg_main .hg_login_input:focus {
+  border-color: var(--hg-accent);
+}
+
+.hg_main .hg_login_error {
+  color: #e74c3c;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+}
+
+.hg_main .hg_user_bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--hg-border-color);
+  margin-bottom: 12px;
+}
+
+.hg_main .hg_user_name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hg-text-primary);
+}
+
+.hg_main .hg_btn_sm {
+  border: 0;
+  color: var(--hg-text-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--hg-border-color);
+  transition: background 0.2s;
+}
+
+.hg_main .hg_btn_sm:focus-visible {
+  outline: 2px solid var(--hg-accent);
+  outline-offset: 2px;
+}
+
+.hg_main .hg_publish_box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hg_main .hg_publish_input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--hg-border-color);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  color: var(--hg-text-primary);
+  min-height: 60px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.hg_main .hg_publish_input:focus {
+  border-color: var(--hg-accent);
+}
+
+.hg_main .hg_publish_actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* -------------------------------------------
+ * 加载 & 按钮 & 空状态
+ * ------------------------------------------- */
+.hg_main .hg_loadmore,
+.hg_main .hg_loading,
+.hg_main .hg_empty {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.hg_main .hg_btn {
+  border: 0;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: var(--hg-accent);
+  opacity: 0.85;
+}
+
+.hg_main .hg_btn:focus-visible {
+  outline: 2px solid var(--hg-accent);
+  outline-offset: 2px;
+}
+
+.hg_main .hg_loading {
+  color: var(--hg-text-light);
+  font-size: 14px;
+}
+
+.hg_main .hg_empty {
+  color: var(--hg-text-lighter);
+  font-size: 15px;
+  padding: 40px 0;
+}
+
+.hg_main .hg_dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hg-accent);
+  margin: 0 3px;
+  animation: hg_b 1.4s infinite ease-in-out;
+}
+
+.hg_main .hg_dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.hg_main .hg_dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hg_main .hg_dots span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+@keyframes hg_b {
+  0%, 80%, to { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* -------------------------------------------
+ * Markdown 内容样式
+ * ------------------------------------------- */
+.hg_main .hg_content > p,
+.hg_main .hg_content h1, .hg_main .hg_content h2, .hg_main .hg_content h3,
+.hg_main .hg_content h4, .hg_main .hg_content h5, .hg_main .hg_content h6 {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.hg_main .hg_content pre,
+.hg_main .hg_content code {
+  font-size: 13px;
+}
+
+.hg_main .hg_content pre {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.hg_main .hg_content code {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--hg-code-bg);
+}
+
+.hg_main .hg_content pre code {
+  background: none;
+  padding: 0;
+}
+
+.hg_main .hg_content pre code.hljs {
+  padding: 0;
+  background: none;
+}
+
+.hg_main .hg_content blockquote {
+  border-left: 3px solid var(--hg-border-strong);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--hg-text-muted);
+}
+
+.hg_main .hg_content ul,
+.hg_main .hg_content ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.hg_main .hg_content li {
+  margin: 4px 0;
+}
+
+.hg_main .hg_content table {
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.hg_main .hg_content td,
+.hg_main .hg_content th {
+  border: 1px solid var(--hg-border-strong);
+  padding: 4px 8px;
+}
+
+.hg_main .hg_content hr {
+  border: 0;
+  border-top: 1px solid var(--hg-border-color);
+  margin: 12px 0;
+}
+
+.hg_main .hg_content img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.hg_main .hg_content a {
+  color: var(--hg-accent);
+  text-decoration: underline;
+}
+
+.hg_main .hg_content a:focus-visible {
+  outline: 2px solid var(--hg-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

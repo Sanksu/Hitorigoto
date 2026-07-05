@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hitorigoto - 后台管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f5f5f5;min-height:100vh}
+.admin-header{background:#fff;border-bottom:1px solid #e8e8e8;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.admin-header h1{font-size:18px;font-weight:500;color:#333}
+.user-info{display:flex;align-items:center;gap:12px;font-size:14px;color:#666}
+.lang-switch{display:flex;gap:4px;margin-right:12px}
+.lang-switch button{background:none;border:1px solid #ddd;padding:2px 8px;border-radius:6px;font-size:12px;cursor:pointer;color:#999;transition:.15s}
+.lang-switch button.active{background:#ff7d49;color:#fff;border-color:#ff7d49}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;transition:.15s;outline:none}
+.btn-primary{background:#ff7d49;color:#fff}.btn-primary:hover{background:#e86d3a}
+.btn-outline{background:#fff;color:#555;border:1px solid #ddd}
+.btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
+.btn-success{background:#27ae60;color:#fff}.btn-success:hover{background:#219a52}
+.btn-sm{padding:4px 10px;font-size:12px}
+.container{max-width:900px;margin:0 auto;padding:24px 16px}
+.card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px}
+.card h2{font-size:16px;font-weight:500;color:#333;margin-bottom:16px}
+.card label{display:block;font-size:13px;color:#666;margin-bottom:4px;margin-top:12px}
+.card textarea{width:100%;min-height:140px;padding:14px;border:1px solid #e8e8e8;border-radius:10px;font-size:14px;resize:vertical;outline:none;font-family:inherit;color:#555;transition:border-color .2s}
+.card input,.card textarea:focus{border-color:#ff7d49}
+.card input{width:100%;padding:10px 14px;border:1px solid #e8e8e8;border-radius:10px;font-size:13px;outline:none;color:#555}
+.card .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.post-table{width:100%;border-collapse:collapse;min-width:600px}
+.post-table th{text-align:left;font-size:13px;color:#999;padding:10px 12px;border-bottom:2px solid #f0f0f0;font-weight:500}
+.post-table td{padding:12px;border-bottom:1px solid #f5f5f5;font-size:13px;color:#555;vertical-align:top}
+.content-cell{max-width:280px;word-break:break-word}
+.time-cell{white-space:nowrap;color:#999;font-size:12px}
+.actions-cell{white-space:nowrap;display:flex;gap:6px}
+.post-table tr:hover{background:#fafafa}
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;font-size:13px;color:#666}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:200;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:40px 0;color:#bbb;font-size:14px}
+.admin-link{position:fixed;bottom:24px;right:24px;background:rgba(255,125,73,.85);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+<div class="admin-header">
+  <h1 id="adminTitle">后台管理</h1>
+  <div class="user-info">
+    <div class="lang-switch">
+      <button id="langZh" onclick="setAdminLang('zh')" class="active">中</button>
+      <button id="langEn" onclick="setAdminLang('en')">EN</button>
+    </div>
+    <span id="userName"></span>
+    <button class="btn btn-outline btn-sm" onclick="logout()" id="btnLogout">退出</button>
+  </div>
+</div>
+<a class="admin-link" href="/" id="linkHome">返回首页</a>
+
+<div class="container">
+  <div class="card">
+    <h2 id="formTitle">发布新动态</h2>
+    <label id="labelContent">内容（支持 Markdown 语法）</label>
+    <textarea id="contentInput" placeholder="说点什么吧..."></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnPublish" onclick="publishPost()">发布</button>
+      <button class="btn btn-success" id="btnUpdate" onclick="updatePost()" style="display:none">保存修改</button>
+      <button class="btn btn-outline" id="btnCancel" onclick="cancelEdit()" style="display:none">取消</button>
+    </div>
+    <input type="hidden" id="editId" value="">
+  </div>
+
+  <div class="card">
+    <h2>所有动态（<span id="totalCount">0</span>）</h2>
+    <div class="table-wrap">
+    <table class="post-table"><thead><tr>
+      <th style="width:42%" id="thContent">内容</th><th style="width:15%" id="thTime">时间</th>
+      <th style="width:8%" id="thOs">系统</th><th style="width:8%" id="thBrowser">浏览器</th><th style="width:27%" id="thActions">操作</th>
+    </tr></thead><tbody id="postListBody"></tbody></table>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none">还没有动态</div>
+    <div class="pagination" id="pagination" style="display:none">
+      <button class="btn btn-outline btn-sm" id="btnPrev" onclick="changePage(-1)">上一页</button>
+      <span id="pageInfo">第 <span id="currentPage">1</span> / <span id="totalPages">1</span> 页</span>
+      <button class="btn btn-outline btn-sm" id="btnNext" onclick="changePage(1)">下一页</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+/**
+ * Hitorigoto 后台管理脚本
+ */
+
+// ============================================
+// 多语言
+// ============================================
+var ADMIN_I18N = {
+  zh: {
+    title: '后台管理', logout: '退出', home: '返回首页',
+    formTitle: '发布新动态', formEditTitle: '编辑动态',
+    labelContent: '内容（支持 Markdown 语法）',
+    placeholder: '说点什么吧...',
+    btnPublish: '发布', btnUpdate: '保存修改', btnCancel: '取消', btnEdit: '编辑', btnDelete: '删除',
+    thContent: '内容', thTime: '时间', thOs: '系统', thBrowser: '浏览器', thActions: '操作',
+    emptyState: '还没有动态',
+    btnPrev: '上一页', btnNext: '下一页',
+    toastEmpty: '请输入内容', toastPublishFail: '发布失败', toastPublishOk: '发布成功',
+    toastUpdateFail: '修改失败', toastUpdateOk: '修改成功',
+    toastDeleteFail: '删除失败', toastDeleteOk: '删除成功',
+    toastNetError: '网络错误', toastLoadFail: '加载失败',
+    confirmDelete: '确定删除？'
+  },
+  en: {
+    title: 'Admin Panel', logout: 'Logout', home: 'Back to Home',
+    formTitle: 'New Post', formEditTitle: 'Edit Post',
+    labelContent: 'Content (Markdown supported)',
+    placeholder: 'Write something...',
+    btnPublish: 'Publish', btnUpdate: 'Save Changes', btnCancel: 'Cancel', btnEdit: 'Edit', btnDelete: 'Delete',
+    thContent: 'Content', thTime: 'Time', thOs: 'OS', thBrowser: 'Browser', thActions: 'Actions',
+    emptyState: 'No posts yet',
+    btnPrev: 'Prev', btnNext: 'Next',
+    toastEmpty: 'Please enter content', toastPublishFail: 'Publish failed', toastPublishOk: 'Published',
+    toastUpdateFail: 'Update failed', toastUpdateOk: 'Updated',
+    toastDeleteFail: 'Delete failed', toastDeleteOk: 'Deleted',
+    toastNetError: 'Network error', toastLoadFail: 'Load failed',
+    confirmDelete: 'Are you sure to delete?'
+  }
+}
+
+var adminLang = localStorage.getItem('hg_admin_lang') || 'zh'
+
+function setAdminLang(lang) {
+  if (!ADMIN_I18N[lang]) return
+  adminLang = lang
+  try { localStorage.setItem('hg_admin_lang', lang) } catch (e) {}
+  // 更新语言切换按钮高亮
+  document.getElementById('langZh').className = lang === 'zh' ? 'active' : ''
+  document.getElementById('langEn').className = lang === 'en' ? 'active' : ''
+  applyAdminI18n()
+}
+
+function applyAdminI18n() {
+  var t = ADMIN_I18N[adminLang]
+  document.title = 'Hitorigoto - ' + t.title
+  $('adminTitle').textContent = t.title
+  $('btnLogout').textContent = t.logout
+  $('linkHome').textContent = t.home
+  $('formTitle').textContent = $('editId').value ? t.formEditTitle : t.formTitle
+  $('labelContent').textContent = t.labelContent
+  $('contentInput').placeholder = t.placeholder
+  $('btnPublish').textContent = t.btnPublish
+  $('btnUpdate').textContent = t.btnUpdate
+  $('btnCancel').textContent = t.btnCancel
+  $('thContent').textContent = t.thContent
+  $('thTime').textContent = t.thTime
+  $('thOs').textContent = t.thOs
+  $('thBrowser').textContent = t.thBrowser
+  $('thActions').textContent = t.thActions
+  $('btnPrev').textContent = t.btnPrev
+  $('btnNext').textContent = t.btnNext
+}
+
+function t(key) {
+  return (ADMIN_I18N[adminLang] || ADMIN_I18N.zh)[key] || key
+}
+
+// ============================================
+// 状态变量
+// ============================================
+
+var apiBase = window.location.origin
+var token = localStorage.getItem('hg_admin_token') || sessionStorage.getItem('hg_admin_token')
+var currentPage = 0
+var totalPages = 1
+var pageSize = 10
+var postsCache = []
+var toastTimer = null
+
+function $(id) { return document.getElementById(id) }
+
+function showToast(msg) {
+  var el = $('toastEl')
+  el.textContent = msg
+  el.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(function () { el.classList.remove('show') }, 2000)
+}
+
+// ============================================
+// 认证 & 初始化
+// ============================================
+
+function initAdmin() {
+  if (!token) { location.href = '/login'; return }
+  $('userName').textContent = localStorage.getItem('hg_admin_name') || '管理员'
+  if (!localStorage.getItem('hg_auth_mode')) {
+    localStorage.setItem('hg_auth_mode', 'waline')
+  }
+  setAdminLang(adminLang)
+  loadPosts()
+}
+
+function logout() {
+  token = null
+  localStorage.removeItem('hg_admin_token')
+  localStorage.removeItem('hg_admin_name')
+  sessionStorage.removeItem('hg_admin_token')
+  location.href = '/login'
+}
+
+// ============================================
+// CRUD 操作
+// ============================================
+
+async function publishPost() {
+  var content = $('contentInput').value.trim()
+  if (!content) { showToast(t('toastEmpty')); return }
+  try {
+    var res = await apiRequest(apiBase + '/api/posts', 'POST', { content_md: content })
+    if (res.status === 401) { logout(); return }
+    if (!res.ok) {
+      try { var errData = await res.json(); showToast(errData.error || t('toastPublishFail')) } catch (_) { showToast(t('toastPublishFail') + ' (' + res.status + ')') }
+      return
+    }
+    cancelEdit()
+    showToast(t('toastPublishOk'))
+    currentPage = 0
+    loadPosts()
+  } catch (e) { showToast(t('toastNetError') + ': ' + e.message) }
+}
+
+function enterEditMode(id, content) {
+  $('editId').value = id
+  $('contentInput').value = content
+  $('formTitle').textContent = t('formEditTitle')
+  $('btnPublish').style.display = 'none'
+  $('btnUpdate').style.display = ''
+  $('btnCancel').style.display = ''
+  scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+async function updatePost() {
+  var id = $('editId').value, content = $('contentInput').value.trim()
+  if (!content) { showToast(t('toastEmpty')); return }
+  try {
+    var res = await apiRequest(apiBase + '/api/posts/' + id, 'PUT', { content_md: content })
+    if (res.status === 401) { logout(); return }
+    if (!res.ok) {
+      try { var errData = await res.json(); showToast(errData.error || t('toastUpdateFail')) } catch (_) { showToast(t('toastUpdateFail') + ' (' + res.status + ')') }
+      return
+    }
+    cancelEdit()
+    showToast(t('toastUpdateOk'))
+    loadPosts()
+  } catch (e) { showToast(t('toastNetError')) }
+}
+
+function cancelEdit() {
+  $('editId').value = ''
+  $('contentInput').value = ''
+  $('formTitle').textContent = t('formTitle')
+  $('btnPublish').style.display = ''
+  $('btnUpdate').style.display = 'none'
+  $('btnCancel').style.display = 'none'
+}
+
+async function deletePost(id) {
+  if (!confirm(t('confirmDelete'))) return
+  try {
+    var res = await fetch(apiBase + '/api/posts/' + id, {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
+    })
+    if (res.status === 401) { logout(); return }
+    if (!res.ok) {
+      try { var errData = await res.json(); showToast(errData.error || t('toastDeleteFail')) } catch (_) { showToast(t('toastDeleteFail') + ' (' + res.status + ')') }
+      return
+    }
+    showToast(t('toastDeleteOk'))
+    loadPosts()
+  } catch (e) { showToast(t('toastNetError')) }
+}
+
+// ============================================
+// 列表加载 & 渲染
+// ============================================
+
+async function loadPosts() {
+  try {
+    var authMode = localStorage.getItem('hg_auth_mode') || 'waline'
+    var res = await fetch(apiBase + '/api/posts?page=' + currentPage + '&pageSize=' + pageSize + '&authMode=' + authMode, {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (res.status === 401) { logout(); return }
+    if (!res.ok) {
+      $('postListBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ' (HTTP ' + res.status + ')</td></tr>'
+      return
+    }
+    var data = await res.json()
+    $('totalCount').textContent = data.total || 0
+    totalPages = Math.ceil((data.total || 0) / pageSize) || 1
+    $('currentPage').textContent = currentPage + 1
+    $('totalPages').textContent = totalPages
+
+    if (!data.posts || !data.posts.length) {
+      if (currentPage > 0) {
+        currentPage = Math.max(0, totalPages - 1)
+        return loadPosts()
+      }
+      $('postListBody').innerHTML = ''
+      $('emptyState').style.display = 'block'
+      $('pagination').style.display = 'none'
+    } else {
+      $('emptyState').style.display = 'none'
+      $('pagination').style.display = data.total > pageSize ? 'flex' : 'none'
+      renderTable(data.posts)
+    }
+    $('btnPrev').disabled = currentPage <= 0
+    $('btnNext').disabled = currentPage >= totalPages - 1
+  } catch (e) {
+    $('postListBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ': ' + e.message + '</td></tr>'
+  }
+}
+
+function renderTable(posts) {
+  var html = ''
+  posts.forEach(function (post, idx) {
+    var preview = (post.content_md || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 100)
+    var date = new Date(post.createdAt)
+    var timeStr = date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' +
+                  pad(date.getHours()) + ':' + pad(date.getMinutes())
+    html += '<tr>' +
+      '<td class="content-cell">' + preview + '</td>' +
+      '<td class="time-cell">' + timeStr + '</td>' +
+      '<td>' + (post.os || '-') + '</td>' +
+      '<td>' + (post.browser || '-') + '</td>' +
+      '<td class="actions-cell">' +
+        '<button class="btn btn-outline btn-sm" data-edit="' + post.id + '">' + t('btnEdit') + '</button>' +
+        '<button class="btn btn-danger btn-sm" data-del="' + post.id + '">' + t('btnDelete') + '</button>' +
+      '</td></tr>'
+  })
+  $('postListBody').innerHTML = html
+  postsCache = posts
+}
+
+// ============================================
+// 分页 & 工具函数
+// ============================================
+
+function changePage(delta) {
+  var next = currentPage + delta
+  if (next < 0 || next >= totalPages) return
+  currentPage = next
+  loadPosts()
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n }
+
+function apiRequest(url, method, body) {
+  return fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify(body || {})
+  })
+}
+
+// ============================================
+// 事件绑定
+// ============================================
+
+$('postListBody').addEventListener('click', function (e) {
+  var btn = e.target.closest('button')
+  if (!btn) return
+  if (btn.dataset.edit !== undefined) {
+    var editId = +btn.dataset.edit
+    var post = postsCache.find(function (p) { return p.id === editId })
+    if (post) enterEditMode(post.id, post.content_md || '')
+  } else if (btn.dataset.del) {
+    deletePost(+btn.dataset.del)
+  }
+})
+
+document.addEventListener('keydown', function (e) {
+  if (e.ctrlKey && e.key === 'Enter') {
+    if ($('editId').value) updatePost()
+    else publishPost()
+  }
+})
+
+// 启动
+initAdmin()
+</script>
+</body>
+</html>

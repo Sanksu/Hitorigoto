@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hitorigoto</title>
+<link rel="stylesheet" href="hitorigoto.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;display:flex;justify-content:center;background:#f5f5f5;}
+.w{width:100%;max-width:680px;padding:40px 16px}
+.h{text-align:center;padding:20px 0 10px}
+.al{position:fixed;bottom:24px;right:24px;background:rgba(255,125,73,.85);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+<div class="w"><div id="hitorigoto"></div></div>
+<a class="al" href="/admin">后台管理</a>
+<script src="hitorigoto.js"></script>
+<script>
+Hitorigoto.init({serverURL:location.origin,el:'#hitorigoto',pageSize:5,lang:'zh'})
+</script>
+</body>
+</html>
