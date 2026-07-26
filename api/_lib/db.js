@@ -103,10 +103,16 @@ async function authByTable(req, table, requireAdmin) {
   if (!creds) return false
   try {
     var sql = getSql()
-    var rows = await sql`SELECT * FROM ${sql(table)} WHERE email = ${creds.email} LIMIT 1`
+    var rows
+    if (table === 'wl_users') {
+      rows = requireAdmin
+        ? await sql`SELECT * FROM wl_users WHERE email = ${creds.email} AND type = 'administrator' LIMIT 1`
+        : await sql`SELECT * FROM wl_users WHERE email = ${creds.email} LIMIT 1`
+    } else {
+      rows = await sql`SELECT * FROM hg_admin WHERE email = ${creds.email} LIMIT 1`
+    }
     if (!rows.length) return false
     var user = rows[0]
-    if (requireAdmin && user.type !== 'administrator') return false
     return (await bcrypt.compare(creds.password, user.password)) ? user : false
   } catch (e) {
     console.error('Auth error:', e)

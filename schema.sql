@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS hg_posts (
   id int check (id > 0) NOT NULL DEFAULT NEXTVAL ('hg_posts_seq'),
   content_md text NOT NULL DEFAULT '',
   content_html text NOT NULL DEFAULT '',
+  status varchar(20) NOT NULL DEFAULT 'published',
   os varchar(100) DEFAULT '',
   browser varchar(100) DEFAULT '',
   "createdAt" timestamp(0) without time zone NULL DEFAULT CURRENT_TIMESTAMP,

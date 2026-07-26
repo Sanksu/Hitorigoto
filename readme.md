@@ -4,11 +4,11 @@
 
 ## 特性
 
-- **支持 Markdown** — ShowdownJS 渲染，highlight.js 代码高亮
-- **双认证模式** — 可选择与 Waline 共用管理员账号（`wl_users`）或独立管理（`hg_admin`）
-- **易于嵌入** — 一条 `<script>` 接入任意页面，支持多实例
-- **样式自定义** — CSS 变量驱动的主题系统
-- **后台管理** — 发布 / 编辑 / 删除，分页浏览，`Ctrl+Enter` 快捷键
+- **支持 Markdown**: ShowdownJS 渲染，highlight.js 代码高亮
+- **双认证模式**: 可选择与 Waline 共用管理员账号（`wl_users`）或独立管理（`hg_admin`）
+- **易于嵌入**: 一条 `<script>` 接入任意页面，支持多实例
+- **样式自定义**: CSS 变量驱动的主题系统
+- **后台管理**: 发布 / 编辑 / 删除，分页浏览，`Ctrl+Enter` 快捷键
 
 ## 项目结构
 
@@ -27,6 +27,10 @@ hitorigoto/
 │   ├── login.html          # 登录页面
 │   └── index.html          # 前端首页（嵌入示例）
 ├── schema.sql              # 数据库建表 SQL
+├── schema-migrate.sql      # 数据库迁移脚本
+├── docs/
+│   ├── API.md              # API 参考文档
+│   └── CONTEXT.md          # 领域术语表
 ├── package.json
 ├── vercel.json             # 路由重写规则
 └── .env.example            # 环境变量模板
@@ -113,7 +117,7 @@ Hitorigoto.init({
 
 | 参数 | 类型 | 默认值 | 必填 | 说明 |
 |---|---|---|---|---|
-| `serverURL` | string | - | **是** | 部署地址（含协议，不含尾斜杠） |
+| `serverURL` | string | — | **是** | 部署地址（含协议，不含尾斜杠） |
 | `el` | string | `'#hitorigoto'` | 否 | 容器 DOM 选择器 |
 | `pageSize` | number | `5` | 否 | 每页加载条数 |
 | `lang` | string | `'zh'` | 否 | 语言: `'zh'` / `'en'`。支持运行时通过 `instance.setLang('en')` 动态切换 |
@@ -128,8 +132,6 @@ Hitorigoto.init({
 1. `wl_users.avatar` 字段（Waline 用户自定义头像）
 2. Libravatar（基于管理员邮箱 MD5 哈希）
 3. Libravatar 默认神秘人物（前端兜底）
-
----
 
 ## 样式定制
 
@@ -266,8 +268,6 @@ theme: {
 | 2 | `theme` 参数 | 实例级别 | `theme: { accent: 'red' }` |
 | 3 (默认) | `hitorigoto.css` 默认值 | 全局 | `--hg-accent: #ff7d49` |
 
----
-
 ## 动态生成的 HTML 结构
 
 调用 `Hitorigoto.init()` 后，组件会在目标容器内动态生成以下 DOM 结构：
@@ -358,8 +358,6 @@ theme: {
 | `.hg_dots span` | 加载动画点 | 三个弹跳圆点 | 加载中 |
 | `.hg_empty` | 空状态 | 无数据时显示 | 首次加载无数据 |
 
----
-
 ## 认证机制
 
 采用 **Base64 Token** 无状态认证：
@@ -419,12 +417,15 @@ curl -X POST https://your-domain.vercel.app/api/auth/login \
 访问 `/admin`，使用 Waline 管理员邮箱和密码登录（或独立账号，取决于 `authMode`）。
 
 功能：
-- **发布新动态** — Markdown 编辑
-- **编辑/删除** — 表格操作行内完成
-- **分页浏览** — 默认每页 10 条
-- **快捷键** — `Ctrl + Enter` 提交发布/保存修改
+- **发布新动态**: Markdown 编辑
+- **编辑/删除**: 表格操作行内完成
+- **状态管理**: 一键切换 已发布/隐藏/置顶/取消置顶，彩色状态标签标识
+- **分页浏览**: 默认每页 10 条
+- **快捷键**: `Ctrl + Enter` 提交发布/保存修改
 
 ## API 接口
+
+> 详细 API 参考见 [docs/API.md](docs/API.md)。以下为快速概览。
 
 ### 公开接口（无需认证）
 
@@ -445,7 +446,7 @@ curl -X POST https://your-domain.vercel.app/api/auth/login \
 | 方法 | 路径 | Body | 说明 |
 |---|---|---|---|
 | `POST` | `/api/posts` | `{ content_md }` | 发布动态，返回 201 |
-| `PUT` | `/api/posts/:id` | `{ content_md }` | 编辑动态内容 |
+| `PUT` | `/api/posts/:id` | `{ content_md, status? }` | 编辑动态内容或状态（`published` / `hidden` / `pinned`） |
 | `DELETE` | `/api/posts/:id` | - | 删除动态 |
 
 **响应格式**:
@@ -472,6 +473,7 @@ curl -X POST https://your-domain.vercel.app/api/auth/login \
 | `id` | int (PK, auto) | 自增主键 |
 | `content_md` | text | Markdown 原文 |
 | `content_html` | text | Showdown 转换后的 HTML |
+| `status` | varchar(20) | `published` \| `hidden` \| `pinned`，默认 `published` |
 | `os` | varchar(100) | 操作系统（如 `Windows`） |
 | `browser` | varchar(100) | 浏览器（如 `Chrome`） |
 | `createdAt` | timestamp | 创建时间 |

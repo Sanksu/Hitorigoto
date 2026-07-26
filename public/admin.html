@@ -19,6 +19,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
 .btn-success{background:#27ae60;color:#fff}.btn-success:hover{background:#219a52}
 .btn-sm{padding:4px 10px;font-size:12px}
+.btn-xs{padding:2px 6px;font-size:11px;border-radius:4px}
+.status-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-green{background:#e8f5e9;color:#2e7d32}
+.tag-gray{background:#f5f5f5;color:#757575}
+.tag-orange{background:#fff3e0;color:#e65100}
+.status-actions{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
 .container{max-width:900px;margin:0 auto;padding:24px 16px}
 .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px}
 .card h2{font-size:16px;font-weight:500;color:#333;margin-bottom:16px}
@@ -73,8 +79,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     <h2>所有动态（<span id="totalCount">0</span>）</h2>
     <div class="table-wrap">
     <table class="post-table"><thead><tr>
-      <th style="width:42%" id="thContent">内容</th><th style="width:15%" id="thTime">时间</th>
-      <th style="width:8%" id="thOs">系统</th><th style="width:8%" id="thBrowser">浏览器</th><th style="width:27%" id="thActions">操作</th>
+      <th style="width:38%" id="thContent">内容</th><th style="width:13%" id="thTime">时间</th>
+      <th style="width:12%" id="thStatus">状态</th><th style="width:7%" id="thOs">系统</th><th style="width:7%" id="thBrowser">浏览器</th><th style="width:27%" id="thActions">操作</th>
     </tr></thead><tbody id="postListBody"></tbody></table>
     </div>
     <div class="empty-state" id="emptyState" style="display:none">还没有动态</div>
@@ -103,13 +109,16 @@ var ADMIN_I18N = {
     labelContent: '内容（支持 Markdown 语法）',
     placeholder: '说点什么吧...',
     btnPublish: '发布', btnUpdate: '保存修改', btnCancel: '取消', btnEdit: '编辑', btnDelete: '删除',
-    thContent: '内容', thTime: '时间', thOs: '系统', thBrowser: '浏览器', thActions: '操作',
+    thContent: '内容', thTime: '时间', thStatus: '状态', thOs: '系统', thBrowser: '浏览器', thActions: '操作',
+    statusPublished: '已发布', statusHidden: '已隐藏', statusPinned: '已置顶',
+    btnShow: '发布', btnHide: '隐藏', btnPin: '置顶', btnUnpin: '取消置顶',
     emptyState: '还没有动态',
     btnPrev: '上一页', btnNext: '下一页',
     toastEmpty: '请输入内容', toastPublishFail: '发布失败', toastPublishOk: '发布成功',
     toastUpdateFail: '修改失败', toastUpdateOk: '修改成功',
     toastDeleteFail: '删除失败', toastDeleteOk: '删除成功',
     toastNetError: '网络错误', toastLoadFail: '加载失败',
+    toastStatusOk: '状态已更新', toastStatusFail: '状态更新失败',
     confirmDelete: '确定删除？'
   },
   en: {
@@ -118,13 +127,16 @@ var ADMIN_I18N = {
     labelContent: 'Content (Markdown supported)',
     placeholder: 'Write something...',
     btnPublish: 'Publish', btnUpdate: 'Save Changes', btnCancel: 'Cancel', btnEdit: 'Edit', btnDelete: 'Delete',
-    thContent: 'Content', thTime: 'Time', thOs: 'OS', thBrowser: 'Browser', thActions: 'Actions',
+    thContent: 'Content', thTime: 'Time', thStatus: 'Status', thOs: 'OS', thBrowser: 'Browser', thActions: 'Actions',
+    statusPublished: 'Published', statusHidden: 'Hidden', statusPinned: 'Pinned',
+    btnShow: 'Publish', btnHide: 'Hide', btnPin: 'Pin', btnUnpin: 'Unpin',
     emptyState: 'No posts yet',
     btnPrev: 'Prev', btnNext: 'Next',
     toastEmpty: 'Please enter content', toastPublishFail: 'Publish failed', toastPublishOk: 'Published',
     toastUpdateFail: 'Update failed', toastUpdateOk: 'Updated',
     toastDeleteFail: 'Delete failed', toastDeleteOk: 'Deleted',
     toastNetError: 'Network error', toastLoadFail: 'Load failed',
+    toastStatusOk: 'Status updated', toastStatusFail: 'Status update failed',
     confirmDelete: 'Are you sure to delete?'
   }
 }
@@ -155,6 +167,7 @@ function applyAdminI18n() {
   $('btnCancel').textContent = t.btnCancel
   $('thContent').textContent = t.thContent
   $('thTime').textContent = t.thTime
+  $('thStatus').textContent = t.thStatus
   $('thOs').textContent = t.thOs
   $('thBrowser').textContent = t.thBrowser
   $('thActions').textContent = t.thActions
@@ -257,6 +270,19 @@ async function updatePost() {
   } catch (e) { showToast(t('toastNetError')) }
 }
 
+async function changeStatus(id, status) {
+  try {
+    var res = await apiRequest(apiBase + '/api/posts/' + id, 'PUT', { status: status })
+    if (res.status === 401) { logout(); return }
+    if (!res.ok) {
+      try { var errData = await res.json(); showToast(errData.error || t('toastStatusFail')) } catch (_) { showToast(t('toastStatusFail') + ' (' + res.status + ')') }
+      return
+    }
+    showToast(t('toastStatusOk'))
+    loadPosts()
+  } catch (e) { showToast(t('toastNetError')) }
+}
+
 function cancelEdit() {
   $('editId').value = ''
   $('contentInput').value = ''
@@ -294,7 +320,7 @@ async function loadPosts() {
     })
     if (res.status === 401) { logout(); return }
     if (!res.ok) {
-      $('postListBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ' (HTTP ' + res.status + ')</td></tr>'
+      $('postListBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ' (HTTP ' + res.status + ')</td></tr>'
       return
     }
     var data = await res.json()
@@ -319,7 +345,7 @@ async function loadPosts() {
     $('btnPrev').disabled = currentPage <= 0
     $('btnNext').disabled = currentPage >= totalPages - 1
   } catch (e) {
-    $('postListBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ': ' + e.message + '</td></tr>'
+    $('postListBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#e74c3c">' + t('toastLoadFail') + ': ' + e.message + '</td></tr>'
   }
 }
 
@@ -330,9 +356,20 @@ function renderTable(posts) {
     var date = new Date(post.createdAt)
     var timeStr = date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' +
                   pad(date.getHours()) + ':' + pad(date.getMinutes())
+    var st = (post.status || 'published')
+    var statusLabel = t('statusPublished')
+    var statusClass = 'tag-green'
+    if (st === 'hidden') { statusLabel = t('statusHidden'); statusClass = 'tag-gray' }
+    else if (st === 'pinned') { statusLabel = t('statusPinned'); statusClass = 'tag-orange' }
     html += '<tr>' +
       '<td class="content-cell">' + preview + '</td>' +
       '<td class="time-cell">' + timeStr + '</td>' +
+      '<td><span class="status-tag ' + statusClass + '">' + statusLabel + '</span>' +
+        '<div class="status-actions">' +
+          (st !== 'published' ? '<button class="btn btn-success btn-xs" data-status="' + post.id + '" data-to="published">' + (st === 'pinned' ? t('btnUnpin') : t('btnShow')) + '</button>' : '') +
+          (st !== 'hidden' ? '<button class="btn btn-outline btn-xs" data-status="' + post.id + '" data-to="hidden">' + t('btnHide') + '</button>' : '') +
+          (st !== 'pinned' ? '<button class="btn btn-outline btn-xs" data-status="' + post.id + '" data-to="pinned">' + t('btnPin') + '</button>' : '') +
+        '</div></td>' +
       '<td>' + (post.os || '-') + '</td>' +
       '<td>' + (post.browser || '-') + '</td>' +
       '<td class="actions-cell">' +
@@ -372,7 +409,9 @@ function apiRequest(url, method, body) {
 $('postListBody').addEventListener('click', function (e) {
   var btn = e.target.closest('button')
   if (!btn) return
-  if (btn.dataset.edit !== undefined) {
+  if (btn.dataset.status !== undefined) {
+    changeStatus(+btn.dataset.status, btn.dataset.to)
+  } else if (btn.dataset.edit !== undefined) {
     var editId = +btn.dataset.edit
     var post = postsCache.find(function (p) { return p.id === editId })
     if (post) enterEditMode(post.id, post.content_md || '')

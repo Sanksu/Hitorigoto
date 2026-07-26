@@ -35,16 +35,29 @@ module.exports = async function handler(req, res) {
         return jsonResponse(res, { ...rows[0], avatar: admin.avatar })
       }
 
-      // 编辑动态内容
+      // 编辑动态内容或状态
       case 'PUT': {
         const user = await adminAuth(req)
         if (!user) return errorResponse(res, 401, 'Unauthorized')
-        const { content_md } = getBody(req)
-        if (!content_md) return errorResponse(res, 400, 'content_md required')
-        const rows = await sql`
-          UPDATE hg_posts SET content_md=${content_md}, content_html=${mdConverter.makeHtml(content_md)},
-          "updatedAt"=CURRENT_TIMESTAMP
-          WHERE id=${id} RETURNING *`
+        const { content_md, status } = getBody(req)
+        if (!content_md && !status) return errorResponse(res, 400, 'content_md 或 status 必填')
+        if (status && !['published', 'hidden', 'pinned'].includes(status)) {
+          return errorResponse(res, 400, 'status 必须为 published / hidden / pinned')
+        }
+
+        var rows
+        if (content_md && status) {
+          rows = await sql`
+            UPDATE hg_posts SET content_md=${content_md}, content_html=${mdConverter.makeHtml(content_md)},
+            status=${status}, "updatedAt"=CURRENT_TIMESTAMP WHERE id=${id} RETURNING *`
+        } else if (content_md) {
+          rows = await sql`
+            UPDATE hg_posts SET content_md=${content_md}, content_html=${mdConverter.makeHtml(content_md)},
+            "updatedAt"=CURRENT_TIMESTAMP WHERE id=${id} RETURNING *`
+        } else {
+          rows = await sql`
+            UPDATE hg_posts SET status=${status}, "updatedAt"=CURRENT_TIMESTAMP WHERE id=${id} RETURNING *`
+        }
         return rows.length ? jsonResponse(res, rows[0]) : errorResponse(res, 404, 'Post not found')
       }
 

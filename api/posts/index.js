@@ -31,9 +31,14 @@ module.exports = async function handler(req, res) {
     switch (req.method) {
       // 分页查询动态列表
       case 'GET': {
+        const user = await adminAuth(req)
         const [posts, count, admin] = await Promise.all([
-          sql`SELECT * FROM hg_posts ORDER BY "createdAt" DESC LIMIT ${pageSize} OFFSET ${page * pageSize}`,
-          sql`SELECT COUNT(*) as total FROM hg_posts`,
+          user
+            ? sql`SELECT * FROM hg_posts ORDER BY status = 'pinned' DESC, "createdAt" DESC LIMIT ${pageSize} OFFSET ${page * pageSize}`
+            : sql`SELECT * FROM hg_posts WHERE status IS DISTINCT FROM 'hidden' ORDER BY status = 'pinned' DESC, "createdAt" DESC LIMIT ${pageSize} OFFSET ${page * pageSize}`,
+          user
+            ? sql`SELECT COUNT(*) as total FROM hg_posts`
+            : sql`SELECT COUNT(*) as total FROM hg_posts WHERE status IS DISTINCT FROM 'hidden'`,
           getAdminInfo(req)
         ])
         const resultPosts = posts.map(p => ({ ...p, avatar: admin.avatar }))
@@ -55,8 +60,8 @@ module.exports = async function handler(req, res) {
         const ua = parseUA(req.headers['user-agent'] || '')
         const now = new Date()
         const rows = await sql`
-          INSERT INTO hg_posts (content_md, content_html, os, browser, "createdAt")
-          VALUES (${content_md}, ${mdConverter.makeHtml(content_md)}, ${ua.os}, ${ua.browser}, ${now.toISOString()})
+          INSERT INTO hg_posts (content_md, content_html, status, os, browser, "createdAt")
+          VALUES (${content_md}, ${mdConverter.makeHtml(content_md)}, 'published', ${ua.os}, ${ua.browser}, ${now.toISOString()})
           RETURNING *`
         return jsonResponse(res, rows[0], 201)
       }
